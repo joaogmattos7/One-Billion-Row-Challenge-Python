@@ -1,3 +1,4 @@
+import sys
 """Processador Paralelo para o Desafio de 1 Bilhão de Linhas.
 
 Este script foi projetado para processar de forma eficiente arquivos de texto
@@ -41,7 +42,7 @@ import time
 # --- Constantes de Configuração ---
 
 # Define o caminho para o arquivo de dados.
-FILENAME = "One-Billion-Row-Challenge-Python/data/measurements.txt"
+FILENAME = sys.argv[1] if len(sys.argv) > 1 else "data/measurements.txt"
 
 # Define o tamanho de cada "pedaço" do arquivo a ser lido na memória.
 # Ajuste este valor dependendo da memória RAM disponível.

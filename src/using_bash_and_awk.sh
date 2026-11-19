@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
+# Uso: ./src/using_bash_and_awk.sh [arquivo]   (padrão: data/measurements.txt)
+FILE="${1:-data/measurements.txt}"
 
-if [ ! -f data/measurements.txt ]; then
-    echo "Arquivo data/measurements.txt não encontrado."
+if [ ! -f "$FILE" ]; then
+    echo "Arquivo $FILE não encontrado."
     exit 1
 fi
 
+# pv (barra de progresso) é opcional
+if command -v pv >/dev/null; then READ="pv -p -e -t"; else READ="cat"; fi
 
-if [ -z "$1" ]; then
-    QTD="$(wc -l < data/measurements.txt)"
-else
-    QTD="$1"
-fi
-
-
-head -n $QTD data/measurements.txt | pv -p -e -t -l -s $QTD | awk -F ";" \
+$READ "$FILE" | awk -F ";" \
 '{
 	if (!($1 in cnts)){
-		mins[$1] = $2 
-		maxs[$1] = $2 
+		mins[$1] = $2
+		maxs[$1] = $2
 	}
 	else{
 		mins[$1] = $2<mins[$1] ? $2 : mins[$1]

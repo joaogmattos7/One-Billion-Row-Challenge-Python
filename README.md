@@ -56,10 +56,29 @@ Para executar os scripts deste projeto, você precisará das seguintes bibliotec
 * Polars: `0.20.3`
 * DuckDB: `0.10.0`
 * Dask[complete]: `^2024.2.0`
+* PyArrow: `15.0.0`
 
 ## Resultados
 
-Os testes foram realizados em um laptop equipado com um processador M1 da Apple e 8GB de RAM. As implementações utilizaram abordagens puramente Python, Pandas, Dask, Polars e DuckDB. Os resultados de tempo de execução para processar o arquivo de 1 bilhão de linhas são apresentados abaixo:
+Testes rodados em um desktop com **AMD Ryzen 7 7800X3D (8 núcleos / 16 threads), 31 GB de RAM, Windows 11**, Python 3.12.1. O tempo é o *wall clock* total de cada script (inclui subir o interpretador e importar a biblioteca), medido por `src/benchmark.py`. Os arquivos de 1M e 10M são as primeiras linhas do arquivo de 1 bilhão.
+
+![Tempo para 1 bilhão de linhas](benchmark_1b.png)
+
+| Implementação | 1 milhão | 10 milhões | 1 bilhão | Linhas/s (1 bi) |
+| --- | ---: | ---: | ---: | ---: |
+| DuckDB | 0,17 s | 0,35 s | **10,0 s** | 100,0 mi |
+| Polars | 0,29 s | 0,67 s | 22,6 s | 44,3 mi |
+| PyArrow | 0,66 s | 1,67 s | 112,3 s | 8,9 mi |
+| Dask | 1,11 s | 2,76 s | 175,0 s | 5,7 mi |
+| Pandas (multiprocessing) | 1,65 s | 3,90 s | 234,4 s | 4,3 mi |
+| Python puro | 1,60 s | 14,71 s | 1.369,6 s (22,8 min) | 0,73 mi |
+| Bash + awk | 1,91 s | 16,50 s | 1.654,3 s (27,6 min) | 0,60 mi |
+
+Os dados brutos ficam em [`results.csv`](results.csv). Com 1 milhão de linhas o tempo é dominado pela inicialização do Python e das bibliotecas; a diferença real entre as ferramentas aparece a partir de 10 milhões.
+
+### Resultados originais do projeto
+
+Os testes originais foram realizados em um laptop equipado com um processador M1 da Apple e 8GB de RAM. Os resultados de tempo de execução para processar o arquivo de 1 bilhão de linhas são apresentados abaixo:
 
 | Implementação | Tempo |
 | --- | --- |
@@ -90,7 +109,18 @@ Para executar este projeto e reproduzir os resultados:
 3. Execute o comando `python src/create_measurements.py` para gerar o arquivo de teste
 4. Tenha paciência e vá fazer um café, vai demorar uns 10 minutos para gerar o arquivo
 5. Certifique-se de instalar as versões especificadas das bibliotecas Dask, Polars e DuckDB
-6. Execute os scripts `python src/using_python.py`, `python src/using_pandas.py`, `python src/using_dask.py`, `python src/using_polars.py` e `python src/using_duckdb.py` através de um terminal ou ambiente de desenvolvimento que suporte Python.
+6. Execute os scripts `python src/using_python.py`, `python src/using_pandas.py`, `python src/using_dask.py`, `python src/using_polars.py`, `python src/using_pyarrow.py` e `python src/using_duckdb.py` através de um terminal ou ambiente de desenvolvimento que suporte Python. Todos aceitam o caminho do arquivo como argumento (padrão: `data/measurements.txt`).
+7. Para comparar todas as implementações de uma vez:
+
+    ```bash
+    head -n 1000000 data/measurements.txt > data/measurements_1m.txt    # arquivos menores para testes rápidos
+    head -n 10000000 data/measurements.txt > data/measurements_10m.txt
+    python src/benchmark.py data/measurements_1m.txt                   # todas as implementações
+    python src/benchmark.py data/measurements.txt duckdb polars        # só algumas
+    python src/plot_results.py                                         # gera benchmark_1b.png a partir de results.csv
+    ```
+
+    Cada execução acrescenta os resultados em `results.csv`.
 
 Este projeto destaca a versatilidade do ecossistema Python para tarefas de processamento de dados, oferecendo valiosas lições sobre escolha de ferramentas para análises em grande escala.
 
@@ -126,10 +156,10 @@ Se você não tem o `pv` instalado, pode facilmente instalá-lo usando o gerenci
 2. Rode o script. Abra um terminal e execute:
    
    ```bash
-   ./src/using_bash_and_awk.sh 1000
+   ./src/using_bash_and_awk.sh data/measurements_1m.txt
    ```
 
-Neste exemplo, apenas as primeiras 1000 linhas serão processadas.
+O argumento é o arquivo a processar (padrão: `data/measurements.txt`). O `pv` é opcional: se não estiver instalado (ex.: Git Bash no Windows), o script roda sem barra de progresso.
 
 Ao executar o script, você verá a barra de progresso (se pv estiver instalado corretamente) e, eventualmente, a saída esperada no terminal ou em um arquivo de saída, se você decidir modificar o script para direcionar a saída.
 
